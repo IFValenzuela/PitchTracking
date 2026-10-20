@@ -1,0 +1,14 @@
+{
+  "name": "batters-eye",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline baseball vision-training PWA: pitch recognition, plate discipline and supporting visual-skill drills.",
+  "type": "module",
+  "scripts": {
+    "serve": "node tools/serve.mjs",
+    "precache": "node tools/gen-precache.mjs",
+    "test": "node --test tests/unit/*.test.js",
+    "e2e": "node tests/e2e/run.mjs"
+  },
+  "license": "MIT"
+}
