@@ -3,15 +3,17 @@ import { app } from '../app.js';
 import { createStaircase, updateStaircase, resumeStaircase } from '../engine/staircase.js';
 
 export class StairBank {
-  constructor(defaults = {}) {
+  // persist: false keeps staircases in memory only (Eye Check uses fresh ones each run).
+  constructor(defaults = {}, { persist = true } = {}) {
     this.defaults = defaults;
+    this.persist = persist;
     this.cache = new Map();
     this.loadedAt = new Map();
   }
 
   async get(key, opts = {}) {
     if (this.cache.has(key)) return this.cache.get(key);
-    const row = await app.repo.db.get('staircases', key);
+    const row = this.persist ? await app.repo.db.get('staircases', key) : null;
     let s;
     if (row?.state) {
       const idleDays = (Date.now() - (row.updatedAt || Date.now())) / 86400000;
@@ -25,7 +27,7 @@ export class StairBank {
   async update(key, correct) {
     const s = updateStaircase(await this.get(key), correct);
     this.cache.set(key, s);
-    await app.repo.saveStaircase(key, s);
+    if (this.persist) await app.repo.saveStaircase(key, s);
     return s;
   }
 

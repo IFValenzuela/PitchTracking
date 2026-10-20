@@ -60,7 +60,7 @@ export class PitchLabSession {
   }
 
   async run() {
-    if (!(await preTrainingCheck())) return null;
+    if (!this.opts.skipChecks && !(await preTrainingCheck())) return null;
     const startedAt = Date.now();
     const shell = openTraining({ onStop: () => this.stop(), strobe: !!this.cfg.strobe });
     this.shell = shell;
@@ -96,7 +96,7 @@ export class PitchLabSession {
     const levels = {};
     for (const [k, s] of this.bank.cache) levels[k] = { start: this.bank.startLevel(k), end: s.level };
     const session = {
-      id: this.sessionId, kind: this.opts.sessionKind, module: 'pitchlab', mode: this.cfg.mode,
+      id: this.sessionId, kind: this.opts.sessionKind, module: this.opts.module || 'pitchlab', mode: this.cfg.mode,
       startedAt, endedAt: Date.now(), durationMs: Date.now() - startedAt,
       config: { ...this.cfg }, stopped: this.stopped,
       summary: compactSummary(summary, levels),
@@ -210,7 +210,7 @@ export class PitchLabSession {
     const res = mode.evaluate(trial, resp, ctx);
     trial.stim = { ...describePitch(pitch, this.zone), occlusionFt: trial.occlusionFt, firstType: trial.firstType, pair: trial.pair, tunnelToPlateFt: trial.params.tunnelToPlateFt, divergenceToPlateFt: r1(trial.divergence?.toPlate), cue: r1(trial.cue) };
     const record = {
-      id: `${this.sessionId}:${i}`, sessionId: this.sessionId, module: 'pitchlab', mode: mode.id, idx: i, t: Date.now(),
+      id: `${this.sessionId}:${i}`, sessionId: this.sessionId, module: this.opts.module || 'pitchlab', mode: mode.id, idx: i, t: Date.now(),
       skill: mode.skill, level: r1(level), stairKey: key,
       stimulus: trial.stim,
       params: Object.fromEntries(Object.entries(trial.params).map(([k, v]) => [k, r1(v)])),

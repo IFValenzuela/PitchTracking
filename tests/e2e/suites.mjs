@@ -228,3 +228,50 @@ suites.stereo = async ({ page, base, shot }) => {
     await finish(page);
   }
 };
+
+// Generic auto-responder: presses enabled answer buttons or taps the stage.
+export async function autoRespond(page, untilFn, { maxMs = 120000 } = {}) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < maxMs) {
+    if (await page.evaluate(untilFn)) return;
+    const acted = await page.evaluate(() => {
+      const btns = [...document.querySelectorAll('.train .rbtn')].filter((b) => !b.disabled && b.offsetParent);
+      const done = document.querySelector('[data-test="drill-done"],[data-test="lab-done"]');
+      if (done) { done.click(); return 'done'; }
+      const pick = document.querySelector('[data-test="zone-pick"]');
+      if (pick) { const r = pick.getBoundingClientRect(); pick.dispatchEvent(new PointerEvent('pointerdown', { clientX: r.x + r.width / 2, clientY: r.y + r.height / 2, bubbles: true })); return 'pick'; }
+      if (btns.length) { btns[Math.floor(Math.random() * btns.length)].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); return 'btn'; }
+      const tz = document.querySelector('.train .tapzone');
+      if (tz) { tz.dispatchEvent(new PointerEvent('pointerdown', { clientX: innerWidth / 2, clientY: innerHeight / 2, bubbles: true })); return 'tap'; }
+      return null;
+    });
+    await sleep(acted ? 350 : 200);
+  }
+  throw new Error('autoRespond timed out');
+}
+
+suites.eyecheck = async ({ page, base, shot }) => {
+  await onboard(page, base, { eyeCheck: true });
+  await page.evaluate(() => { window.__battersEye.testTrialCap = 8; });
+  await page.waitForSelector('[data-test="eye-start"]');
+  await shot('intro');
+  await page.click('[data-test="eye-start"]');
+  for (let i = 0; i < 9; i++) {
+    await page.waitForSelector('[data-test="eye-test-start"]', { timeout: 30000 });
+    const title = await page.textContent('.onb h1');
+    await page.click('[data-test="eye-test-start"]');
+    await page.waitForSelector('.train', { timeout: 10000 });
+    if (i === 2) { await sleep(2500); await shot(`test-${i}`); }
+    await autoRespond(page, () => !document.querySelector('.train'), { maxMs: 90000 });
+    console.log(`     eye test ${i + 1}: ${title}`);
+  }
+  await page.waitForSelector('[data-test="eye-composite"]', { timeout: 15000 });
+  await shot('results');
+  const comp = await page.textContent('[data-test="eye-composite"]');
+  const a = await page.evaluate(async () => window.__battersEye.repo.listAssessments());
+  assert(a.length === 1 && a[0].baseline, 'assessment saved as baseline');
+  const skills = Object.keys(a[0].scores);
+  console.log('     scored skills:', skills.join(', '), '| composite', comp);
+  assert(skills.length >= 6, `most skills scored (${skills.length})`);
+  assert(Object.values(a[0].scores).every((s) => s.score === 50), `first run = 50 everywhere: ${JSON.stringify(a[0].scores)} raw ${JSON.stringify(a[0].raw)}`);
+};
