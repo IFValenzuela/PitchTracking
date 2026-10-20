@@ -228,3 +228,41 @@ table.data th { color: var(--muted); font-weight: 600; font-size: .8rem; }
 .train .resp.sbs .rbtn { background: transparent; border: 0; border-radius: 0; min-height: 100%; display: flex; flex-direction: column; justify-content: flex-end;
   padding-bottom: 14px; font-size: .9rem; color: rgba(255,255,255,.55); }
 .train .resp.sbs .rbtn + .rbtn { border-left: 1px dashed rgba(255,255,255,.15); }
+
+/* ---------- data viz tokens (reference palette; light and dark steps selected separately) ---------- */
+:root { --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+  --seq-0: #1b2533; --seq-1: #104281; --seq-2: #184f95; --seq-3: #1c5cab; --seq-4: #256abf; --seq-5: #2a78d6; --seq-6: #3987e5; }
+[data-theme="light"] { --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+  --seq-0: #eef3f9; --seq-1: #cde2fb; --seq-2: #9ec5f4; --seq-3: #6da7ec; --seq-4: #3987e5; --seq-5: #256abf; --seq-6: #184f95; }
+.chart .series-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .series-dot { stroke: var(--card); stroke-width: 2; }
+.chart .series-dot.small { stroke-width: 1.5; }
+.s1 { stroke: var(--series-1); fill: var(--series-1); } .s2 { stroke: var(--series-2); fill: var(--series-2); }
+.s3 { stroke: var(--series-3); fill: var(--series-3); } .s4 { stroke: var(--series-4); fill: var(--series-4); }
+.chart .series-line.s1, .chart .series-line.s2, .chart .series-line.s3, .chart .series-line.s4 { fill: none; }
+.chart .grid-line { stroke: var(--line); stroke-dasharray: none; opacity: .8; }
+.chart .ref-line { stroke: var(--muted); stroke-width: 1; opacity: .7; }
+.chart .crosshair { stroke: var(--muted); stroke-width: 1; }
+.chart .bar { stroke: none; }
+.chart .bar-track { fill: var(--card2); }
+.chart text.val { fill: var(--text); font-weight: 600; }
+.legend i.key, .viz-tip i.key { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; background: currentColor; border: 0; }
+i.key.s1 { background: var(--series-1); } i.key.s2 { background: var(--series-2); } i.key.s3 { background: var(--series-3); } i.key.s4 { background: var(--series-4); }
+.viz-tip { position: absolute; z-index: 5; pointer-events: none; background: var(--card2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font-size: .8rem; min-width: 120px; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+.viz-tip .tip-h { color: var(--muted); font-size: .75rem; margin-bottom: 2px; }
+.zoneheat { display: flex; flex-direction: column; gap: 6px; max-width: 280px; }
+.zh-row { display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: 6px; }
+.zh-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin: 0 18%; }
+.heat-cell { aspect-ratio: 1.15; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: .78rem; line-height: 1.1; color: var(--text); }
+.heat-cell small { opacity: .8; font-size: .66rem; }
+.heat-cell.empty { background: var(--card2); color: var(--muted); }
+.heat-cell.seq0 { background: var(--seq-0); } .heat-cell.seq1 { background: var(--seq-1); } .heat-cell.seq2 { background: var(--seq-2); }
+.heat-cell.seq3 { background: var(--seq-3); } .heat-cell.seq4 { background: var(--seq-4); color: #fff; } .heat-cell.seq5 { background: var(--seq-5); color: #fff; } .heat-cell.seq6 { background: var(--seq-6); color: #fff; }
+[data-theme="dark"] .heat-cell.seq1, [data-theme="dark"] .heat-cell.seq2, [data-theme="dark"] .heat-cell.seq3 { color: #fff; }
+.zh-gap { visibility: hidden; }
+.stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.stat-tile { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.stat-tile .l { color: var(--muted); font-size: .8rem; }
+.stat-tile .v { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat-tile .d { font-size: .8rem; color: var(--muted); }
+details.table-view summary { cursor: pointer; color: var(--muted); font-size: .85rem; margin-top: 6px; }

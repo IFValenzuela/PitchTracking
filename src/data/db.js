@@ -66,6 +66,17 @@ export async function openIndexedDB(name = DB_NAME, idb = globalThis.indexedDB) 
     getAllByIndex: (s, ix, v) => run(s, 'readonly', (os) => os.index(ix).getAll(v)),
     clear: (s) => run(s, 'readwrite', (os) => os.clear()),
     count: (s) => run(s, 'readonly', (os) => os.count()),
+    // One transaction across stores: all rows land, or none do.
+    async bulkWrite(rowsByStore, { clear = false } = {}) {
+      const names = Object.keys(rowsByStore);
+      const tx = db.transaction(names, 'readwrite');
+      for (const n of names) {
+        const os = tx.objectStore(n);
+        if (clear) os.clear();
+        for (const v of rowsByStore[n]) os.put(v);
+      }
+      await txDone(tx);
+    },
     close: () => db.close(),
   };
 }
@@ -86,6 +97,9 @@ export function memoryAdapter() {
     async getAllByIndex(s, ix, val) { return sorted(s).filter((v) => v[ix] === val); },
     async clear(s) { data[s].clear(); },
     async count(s) { return data[s].size; },
+    async bulkWrite(rowsByStore, { clear = false } = {}) {
+      for (const [n, rows] of Object.entries(rowsByStore)) { if (clear) data[n].clear(); for (const v of rows) data[n].set(keyOf(n, v), clone(v)); }
+    },
     close() {},
   };
 }

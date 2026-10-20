@@ -316,3 +316,68 @@ suites.gym = async ({ page, base, shot }) => {
   await page.waitForSelector('[data-test="drill-done"]');
   await page.click('[data-test="drill-done"]');
 };
+
+suites.planProgress = async ({ page, base, shot, out }) => {
+  await onboard(page, base);
+  // Seed a baseline Eye Check so the plan has weak areas to target.
+  await page.evaluate(async () => {
+    const app = window.__battersEye;
+    await app.repo.saveSettings({ prefs: { blockSize: 10 } });
+    app.testDrillSeconds = 4;
+    await app.repo.saveAssessment({ id: 'a_seed', at: Date.now() - 86400000, raw: {
+      pitchRecognition: { p: -0.4, se: 0.5, n: 16, display: { pct: 40 } }, zoneJudgment: { p: 1.6, se: 0.4, n: 16, display: { dprime: 1.6, pct: 78 } },
+      pursuit: { p: 3, se: 1, n: 10 }, dynamicAcuity: { p: 12, se: 1, n: 18 }, anticipation: { p: 3, se: 0.1, n: 12, display: { ms: 45 } } },
+    scores: {}, composite: 50, compositeSE: 4, baseline: true });
+  });
+  await page.goto(`${base}#/gym`);
+  await page.goto(`${base}#/home`);
+  await page.waitForSelector('[data-test="start-today"]');
+  await shot('home');
+  const plan = await page.evaluate(async () => window.__battersEye.repo.currentPlan());
+  assert(plan.sessions.length === 3 && plan.basedOn === 'a_seed' && plan.weakSkills.includes('pitchRecognition'), `plan rebuilt from the Eye Check (${plan.weakSkills})`);
+  await page.click('[data-test="start-today"]');
+  for (let b = 0; b < 2; b++) {
+    await page.waitForSelector('[data-test="session-go"]');
+    await page.click('[data-test="session-go"]');
+    await page.waitForSelector('.train');
+    await autoRespond(page, () => !document.querySelector('.train'), { maxMs: 120000 });
+  }
+  await page.waitForSelector('[data-test="session-go"]');
+  const p2 = await page.evaluate(async () => window.__battersEye.repo.currentPlan());
+  assert(p2.sessions[0].blocks.filter((x) => x.doneAt).length === 2, 'two blocks marked done');
+  await shot('session');
+
+  // Progress dashboard with a couple of real results
+  await page.goto(`${base}#/progress`);
+  await page.waitForSelector('[data-test="rr-open"]');
+  await page.click('[data-test="rr-open"]');
+  await page.fill('[data-test="rr-pa"]', '4');
+  await page.fill('[data-test="rr-k"]', '1');
+  await page.fill('[data-test="rr-outsidePitches"]', '12');
+  await page.fill('[data-test="rr-chases"]', '5');
+  await page.click('[data-test="rr-save"]');
+  await page.waitForSelector('[data-test="rr-verdict"]');
+  const verdict = await page.textContent('[data-test="rr-verdict"]');
+  assert(/Too little/.test(verdict), `honest verdict with thin data: ${verdict}`);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${out}planProgress-progress.png`, fullPage: true });
+
+  // Export → wipe → import round trip through the real UI and IndexedDB
+  const before = await page.evaluate(async () => { const { exportAll } = await import('./src/data/export.js'); return exportAll(window.__battersEye.repo.db); });
+  const file = `${out}export.json`;
+  (await import('node:fs')).writeFileSync(file, JSON.stringify(before));
+  await page.evaluate(async () => { for (const s of ['sessions', 'trials', 'staircases', 'assessments', 'plans', 'realResults']) await window.__battersEye.repo.db.clear(s); });
+  await page.goto(`${base}#/settings`);
+  await page.setInputFiles('[data-test="import-file"]', file);
+  await page.waitForSelector('.dialog');
+  await page.click('.dialog button.primary');
+  await page.waitForSelector('.toast:has-text("Imported")', { timeout: 10000 });
+  console.log('     after import:', await page.evaluate(async () => { const db = window.__battersEye.repo.db; const o = {}; for (const s of ['sessions', 'trials', 'assessments', 'plans', 'realResults']) o[s] = await db.count(s); return JSON.stringify(o); }));
+  await page.reload();
+  await page.waitForSelector('nav.nav');
+  const after = await page.evaluate(async () => { const { exportAll } = await import('./src/data/export.js'); return exportAll(window.__battersEye.repo.db); });
+  for (const s of Object.keys(before.stores)) {
+    if (s === 'kv') continue; // usage counters keep ticking during the test
+    assert(JSON.stringify(after.stores[s]) === JSON.stringify(before.stores[s]), `store ${s} round-trips (${before.stores[s].length} rows)\n${JSON.stringify(before.stores[s]).slice(0, 600)}\n${JSON.stringify(after.stores[s]).slice(0, 600)}`);
+  }
+};

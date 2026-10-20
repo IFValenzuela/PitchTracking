@@ -30,11 +30,8 @@ export function validateExport(obj) {
 export async function importAll(adapter, obj, { mode = 'replace' } = {}) {
   const errors = validateExport(obj);
   if (errors.length) throw new Error(`Invalid export file: ${errors.join(', ')}`);
-  for (const s of STORE_NAMES) {
-    const rows = obj.stores[s];
-    if (mode === 'replace') await adapter.clear(s);
-    if (rows?.length) await adapter.putMany(s, rows);
-  }
+  const rows = Object.fromEntries(STORE_NAMES.map((s) => [s, obj.stores[s] || []]));
+  await adapter.bulkWrite(rows, { clear: mode === 'replace' });
   const counts = {};
   for (const s of STORE_NAMES) counts[s] = obj.stores[s]?.length || 0;
   return counts;

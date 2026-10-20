@@ -6,6 +6,7 @@ import { labView } from './lab.js';
 import { gymView, drillView } from './gym.js';
 import { progressView } from './progress.js';
 import { eyecheckView } from './eyecheck.js';
+import { sessionView } from './session.js';
 
 export const routes = {
   home: homeView,
@@ -16,4 +17,5 @@ export const routes = {
   settings: settingsView,
   onboarding: onboardingView,
   eyecheck: eyecheckView,
+  session: sessionView,
 };
