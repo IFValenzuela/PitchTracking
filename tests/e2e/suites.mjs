@@ -275,3 +275,44 @@ suites.eyecheck = async ({ page, base, shot }) => {
   assert(skills.length >= 6, `most skills scored (${skills.length})`);
   assert(Object.values(a[0].scores).every((s) => s.score === 50), `first run = 50 everywhere: ${JSON.stringify(a[0].scores)} raw ${JSON.stringify(a[0].raw)}`);
 };
+
+suites.gym = async ({ page, base, shot }) => {
+  await onboard(page, base);
+  await page.evaluate(() => { window.__battersEye.testDrillSeconds = 5; });
+  await page.goto(`${base}#/gym`);
+  await page.waitForSelector('[data-test="drill-saccadeSnap"]');
+  await shot('list');
+  const ids = await page.$$eval('a[data-test^="drill-"]', (as) => as.map((a) => a.dataset.test.slice(6)).filter((x) => x !== 'strobe'));
+  assert(ids.length === 11, `11 drills listed + strobe (${ids.length})`);
+  for (const id of ids) {
+    await page.goto(`${base}#/drill/${id}`);
+    await page.waitForSelector('[data-test="drill-start"]');
+    await page.click('[data-test="drill-start"]');
+    await page.waitForSelector('.train');
+    await sleep(1800);
+    await shot(`run-${id}`);
+    await autoRespond(page, () => !document.querySelector('.train'), { maxMs: 40000 });
+    const n = await page.evaluate(async (d) => (await window.__battersEye.repo.allTrials()).filter((t) => t.drill === d).length, id);
+    console.log(`     ${id}: ${n} trials`);
+    assert(n >= 1, `${id} logged trials`);
+  }
+  // Strobe: enable through the warning, run one compatible drill, STOP ends it instantly.
+  await page.goto(`${base}#/drill/strobe`);
+  await page.click('[data-test="strobe-enable"]');
+  await page.waitForSelector('.dialog');
+  const warn = await page.textContent('.dialog');
+  assert(/seizure/i.test(warn), 'photosensitivity warning shown');
+  await page.click('.dialog button.primary');
+  await page.waitForSelector('[data-test="strobe-pursuit"]');
+  await page.click('[data-test="strobe-pursuit"]');
+  await page.waitForSelector('.train .strobe');
+  await sleep(1200);
+  const ops = [];
+  for (let i = 0; i < 12; i++) { ops.push(await page.$eval('.train .strobe', (e) => e.style.opacity)); await sleep(60); }
+  assert(ops.includes('1') && ops.includes('0'), `strobe toggles (${ops.join('')})`);
+  await page.click('.stop-btn');
+  const after = await page.$eval('.train .strobe', (e) => e.style.opacity);
+  assert(after === '0', 'stop clears strobe immediately');
+  await page.waitForSelector('[data-test="drill-done"]');
+  await page.click('[data-test="drill-done"]');
+};

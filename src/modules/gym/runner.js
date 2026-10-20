@@ -146,7 +146,8 @@ export async function runDrill(drill, opts = {}) {
   if (inst.intro) { shell.message(t(drill.nameKey), inst.intro()); await sleep(1600); shell.clearMessage(); }
   else await sleep(700);
   const t0 = now();
-  const timeUp = () => (o.trials ? trials.length >= o.trials : (now() - t0) / 1000 >= (o.seconds || drill.defaultSeconds || 90));
+  const seconds = app.testDrillSeconds || o.seconds || drill.defaultSeconds || 90; // e2e tests shorten drills
+  const timeUp = () => (o.trials ? trials.length >= o.trials : (now() - t0) / 1000 >= seconds);
 
   while (!stopped && !timeUp()) {
     if (shell.needsBreak()) { shell.strobe.stop(); await shell.breakPause(); if (o.strobe) shell.strobe.start(); }
@@ -154,7 +155,7 @@ export async function runDrill(drill, opts = {}) {
     const level = o.fixedLevel ?? stair.level;
     const params = drill.ladder(level, ctx);
     const trial = inst.nextTrial(params, level);
-    shell.setHud([t(drill.nameKey), o.trials ? t('train.trial', { i: trials.length + 1, n: o.trials }) : t('train.timeLeft', { n: Math.max(0, Math.ceil((o.seconds || drill.defaultSeconds) - (now() - t0) / 1000)) }), o.fixedLevel === undefined ? t('train.level', { n: fmtNum(level, 1) }) : null]);
+    shell.setHud([t(drill.nameKey), o.trials ? t('train.trial', { i: trials.length + 1, n: o.trials }) : t('train.timeLeft', { n: Math.max(0, Math.ceil(seconds - (now() - t0) / 1000)) }), o.fixedLevel === undefined ? t('train.level', { n: fmtNum(level, 1) }) : null]);
     const response = await new Promise((resolve) => {
       current = { resolve };
       inst.start(trial, now());

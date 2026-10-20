@@ -5,4 +5,5 @@ export const app = {
   repo: null, // data/repo.js instance
   router: null, // ui/router.js instance
   testTrialCap: 0, // set only by automated browser tests
+  testDrillSeconds: 0, // set only by automated browser tests
 };
