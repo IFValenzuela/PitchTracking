@@ -275,6 +275,7 @@ export default {
   'lab.slot.side': 'Sidearm',
   'lab.occlTask': 'Call to make',
   'lab.strobe': 'Strobe overlay for this block',
+  'lab.deception': 'Hide release-point tells (all pitches from the same slot)',
   'lab.ball': 'Ball',
   'lab.strike': 'Strike',
   'lab.swing': 'SWING',

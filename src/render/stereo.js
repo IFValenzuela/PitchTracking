@@ -10,6 +10,7 @@ export class StereoOutput {
   constructor(renderer) {
     this.renderer = renderer;
     this.mode = 'off';
+    this.focusFt = 40;
     this.stereo = new THREE.StereoCamera();
     this.size = new THREE.Vector2();
     this.rtL = null;
@@ -48,6 +49,9 @@ export class StereoOutput {
     const r = this.renderer;
     if (this.mode === 'off' || r.xr.isPresenting) { r.render(scene, camera); return; }
     camera.updateMatrixWorld();
+    // Zero-parallax plane mid-flight: the pitcher sits slightly behind the screen,
+    // the ball comes out toward the viewer as it approaches.
+    camera.focus = this.focusFt;
     r.getDrawingBufferSize(this.size);
     if (this.mode === 'sbs') {
       const aspect = camera.aspect;

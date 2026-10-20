@@ -190,7 +190,7 @@ export class PitchLabSession {
     const buttons = mode.buttons(ctx, trial);
     if (!this.resp || mode.id === 'tunnel') {
       this.resp?.remove();
-      this.resp = this.shell.responses(buttons, (id, ts) => this.#onPress(id, ts));
+      this.resp = this.shell.responses(buttons, (id, ts) => this.#onPress(id, ts), { layout: this.settings.prefs.stereo === 'sbs' ? 'sbs' : undefined });
       this.currentButtons = buttons;
     }
     this.resp.setEnabled(false);

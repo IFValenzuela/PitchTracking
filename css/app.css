@@ -223,3 +223,8 @@ table.data th { color: var(--muted); font-weight: 600; font-size: .8rem; }
 .plan-block .done { color: var(--good); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .field .segmented, .field select { align-self: flex-start; } .field select { min-width: 200px; width: auto; }
+/* side-by-side (phone headset): answers become invisible full-height tap zones */
+.train .resp.sbs { inset: 0; gap: 0; z-index: 15; }
+.train .resp.sbs .rbtn { background: transparent; border: 0; border-radius: 0; min-height: 100%; display: flex; flex-direction: column; justify-content: flex-end;
+  padding-bottom: 14px; font-size: .9rem; color: rgba(255,255,255,.55); }
+.train .resp.sbs .rbtn + .rbtn { border-left: 1px dashed rgba(255,255,255,.15); }

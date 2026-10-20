@@ -57,7 +57,7 @@ export function resultPlot(zone, actual, { correct, guess } = {}) {
 
 // Location picker: resolves with {x, z} in feet (catcher's view) or null on cancel.
 export function locationPicker(host, zone, onPick) {
-  const W = Math.min(innerWidth * 0.62, innerHeight * 0.95 * (4.4 / 4.8)), H = W * (4.8 / 4.4);
+  const W = Math.min(innerWidth * 0.62, (innerHeight - 84) * (4.4 / 4.8)), H = W * (4.8 / 4.4);
   const dpr = Math.min(2, devicePixelRatio || 1);
   const cv = h('canvas', { class: 'zone-pick', width: Math.round(W * dpr), height: Math.round(H * dpr), 'data-test': 'zone-pick',
     style: { left: `${(innerWidth - W) / 2}px`, top: `${Math.max(64, (innerHeight - H) / 2)}px`, width: `${W}px`, height: `${H}px`, background: 'rgba(8,12,18,.82)', borderRadius: '14px', border: '1px solid #2a3442' } });

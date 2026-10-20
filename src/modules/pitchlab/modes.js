@@ -48,7 +48,7 @@ function makePitcherFor(ctx, level) {
 function pitchFor(ctx, level, { type, strike, edgeMin, edgeMax, deception }) {
   const pitcher = makePitcherFor(ctx, level);
   const target = sampleLocation(ctx.rng, ctx.zone, { strike, edgeMin, edgeMax });
-  return generatePitch({ pitcher, type, target, rng: ctx.rng, deception });
+  return generatePitch({ pitcher, type, target, rng: ctx.rng, deception: ctx.cfg.deception ? 1 : deception });
 }
 
 function describe(pitch, zone) {
@@ -258,12 +258,13 @@ const tunnel = {
     const firstType = ctx.rng.pick([a, b]);
     const secondType = ctx.rng.pick([a, b]);
     const target = sampleLocation(ctx.rng, ctx.zone, { strike: ctx.rng.chance(0.6), edgeMin: 0, edgeMax: 8 });
-    const first = generatePitch({ pitcher, type: firstType, target, rng: ctx.rng, deception: p.deception });
+    const dec = ctx.cfg.deception ? 1 : p.deception;
+    const first = generatePitch({ pitcher, type: firstType, target, rng: ctx.rng, deception: dec });
     const y = PLATE_FRONT_Y + p.tunnelToPlateFt;
     const at = crossingAt(first.traj, y);
     const second = secondType === firstType
-      ? generatePitch({ pitcher, type: secondType, target: { x: target.x + ctx.rng.normal(0, 0.15), z: target.z + ctx.rng.normal(0, 0.15) }, rng: ctx.rng, deception: p.deception })
-      : generatePitch({ pitcher, type: secondType, tunnel: { x: at.x, y, z: at.z }, rng: ctx.rng, deception: p.deception });
+      ? generatePitch({ pitcher, type: secondType, target: { x: target.x + ctx.rng.normal(0, 0.15), z: target.z + ctx.rng.normal(0, 0.15) }, rng: ctx.rng, deception: dec })
+      : generatePitch({ pitcher, type: secondType, tunnel: { x: at.x, y, z: at.z }, rng: ctx.rng, deception: dec });
     const div = divergenceDistance(first, second);
     return { pitches: [first, second], params: p, truth: secondType, pair: pre.pair, firstType, tunnelY: y, tunnelPoint: [at.x, y, at.z], divergence: div, deadlineAfterPlateMs: p.windowAfterMs, cue: p.cue };
   },
