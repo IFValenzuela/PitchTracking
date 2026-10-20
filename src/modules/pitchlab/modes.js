@@ -24,6 +24,7 @@ const L = (level, a, b) => lerpLevel(level, MAX_LEVEL, a, b);
 
 // Shared difficulty pieces.
 function fbVelo(level, ctx) {
+  if (ctx.cfg?.fixedMph) return ctx.cfg.fixedMph; // custom block at a set speed
   const [lo, hi] = LEVEL_VELO[ctx.settings.profile.level] || LEVEL_VELO.hs;
   return L(level, lo, hi + 4);
 }
@@ -208,7 +209,7 @@ const occlusion = {
     const [lo, hi] = LEVEL_VELO[ctx.settings.profile.level] || LEVEL_VELO.hs;
     return {
       occlusionFt: L(level, 42, 5),
-      fbMph: (lo + hi) / 2,
+      fbMph: ctx.cfg?.fixedMph || (lo + hi) / 2,
       edgeMax: 9, edgeMin: 1.5,
       windowAfterMs: 1500,
       deception: 0.6,

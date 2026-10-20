@@ -78,3 +78,11 @@ test('bias statistics from logged trials', () => {
   assert.equal(sum.n, 35);
   assert.equal(sum.byType[0].key, 'FF');
 });
+
+test('custom blocks can fix the fastball speed', () => {
+  const ctx = ctxFor({ fixedMph: 95 });
+  assert.equal(MODES.zone.ladder(0, ctx).fbMph, 95);
+  assert.equal(MODES.zone.ladder(20, ctx).fbMph, 95);
+  const tr = MODES.zone.makeTrial(ctx, 5);
+  assert.ok(tr.pitches[0].flightMs < 520);
+});

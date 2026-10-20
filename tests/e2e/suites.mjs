@@ -381,3 +381,60 @@ suites.planProgress = async ({ page, base, shot, out }) => {
     assert(JSON.stringify(after.stores[s]) === JSON.stringify(before.stores[s]), `store ${s} round-trips (${before.stores[s].length} rows)\n${JSON.stringify(before.stores[s]).slice(0, 600)}\n${JSON.stringify(after.stores[s]).slice(0, 600)}`);
   }
 };
+
+// Phone-sized layouts (landscape and portrait) with touch input.
+suites.phone = async ({ page, context, base, shot }) => {
+  await onboard(page, base);
+  for (const [name, vp] of [['landscape', { width: 844, height: 390 }], ['portrait', { width: 390, height: 844 }]]) {
+    await page.setViewportSize(vp);
+    await page.goto(`${base}#/gym`); await page.goto(`${base}#/home`);
+    await page.waitForSelector('nav.nav');
+    await shot(`${name}-home`);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    assert(overflow <= 1, `no horizontal scroll on ${name} home (${overflow}px)`);
+    await page.goto(`${base}#/lab`);
+    await page.click('[data-test="lab-start"]');
+    await page.waitForFunction(() => window.__pitchScene && window.__pitchScene.lastT > 0.1, null, { timeout: 20000 });
+    await shot(`${name}-lab`);
+    const r = await page.evaluate(() => { const b = document.querySelector('.stop-btn').getBoundingClientRect(); const btns = [...document.querySelectorAll('.rbtn')].map((x) => x.getBoundingClientRect()); return { stop: b, btns }; });
+    assert(r.btns.every((b) => b.height >= 44 && b.width >= 44), 'answer buttons are at least 44 px');
+    assert(r.stop.right <= vp.width && r.stop.top >= 0, 'STOP is on screen');
+    await page.click('.stop-btn');
+    await page.click('[data-test="lab-done"]');
+    await page.waitForSelector('.train', { state: 'detached' });
+    await page.waitForSelector('[data-test="lab-start"]:not([disabled])');
+    await page.goto(`${base}#/drill/dynamicAcuity`);
+    await page.click('[data-test="drill-start"]');
+    await page.waitForSelector('.train');
+    await sleep(1500);
+    await shot(`${name}-drill`);
+    await page.click('.stop-btn');
+    await page.click('[data-test="drill-done"]');
+    await page.waitForSelector('.train', { state: 'detached' });
+  }
+};
+
+// After the first load: no requests to other origins ever, and training works offline.
+suites.noNetwork = async ({ page, context, base }) => {
+  const foreign = [];
+  page.on('request', (req) => { if (!req.url().startsWith(base) && !req.url().startsWith('data:') && !req.url().startsWith('blob:')) foreign.push(req.url()); });
+  await onboard(page, base);
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.reload();
+  await page.waitForFunction(async () => !!navigator.serviceWorker.controller && (await caches.keys()).length > 0, null, { timeout: 15000 });
+  await page.waitForTimeout(1500); // let precache finish
+  await context.setOffline(true);
+  const fails = [];
+  page.on('requestfailed', (r) => fails.push(r.url()));
+  await page.goto(`${base}#/gym`);
+  await page.reload();
+  await page.waitForSelector('nav.nav');
+  await page.goto(`${base}#/lab`);
+  await page.click('[data-test="lab-start"]');
+  await page.waitForFunction(() => window.__pitchScene && window.__pitchScene.lastT > 0.1, null, { timeout: 20000 });
+  await page.click('.stop-btn');
+  await page.click('[data-test="lab-done"]');
+  await context.setOffline(false);
+  assert(!foreign.length, `requests to other origins: ${foreign.join(', ')}`);
+  assert(!fails.length, `requests failed offline: ${fails.join(', ')}`);
+};

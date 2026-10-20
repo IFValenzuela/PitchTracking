@@ -78,6 +78,7 @@ export class PitchLabSession {
     }
     this.scene = scene;
     scene.setZone(this.zone);
+    if (this.cfg.zoneAssist) scene.showZone(true); // assist mode: translucent zone during play
     window.__pitchScene = scene; // e2e hook
     if (scene.fovInfo.scale < 0.95 && this.settings.prefs.view === 'batter') {
       shell.message(null, t('lab.fovScaled', { n: Math.round(scene.fovInfo.scale * 100) }), '', 2500);
@@ -249,6 +250,7 @@ export class PitchLabSession {
     this.resp?.el && (this.resp.el.style.visibility = 'hidden');
     await openReview({ shell: this.shell, scene: this.scene, trial, zone: this.zone, stop: () => this.stopped });
     this.resp?.el && (this.resp.el.style.visibility = '');
+    if (this.cfg.zoneAssist) this.scene.showZone(true);
     this.reviewing = false;
   }
 

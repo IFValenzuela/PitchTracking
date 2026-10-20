@@ -71,7 +71,10 @@ export async function labView() {
       segmented(cfg.hand, [['R', t('lab.rhp')], ['L', t('lab.lhp')], ['mix', t('lab.mix')]], (v) => { cfg.hand = v; save(); })));
     parts.push(h('div', { class: 'field' }, h('span', { class: 'field-label' }, t('lab.slot')),
       segmented(cfg.slot, [['over', t('lab.slot.over')], ['threeQuarter', t('lab.slot.threeQuarter')], ['low', t('lab.slot.low')], ['side', t('lab.slot.side')], ['mix', t('lab.mix')]], (v) => { cfg.slot = v; save(); })));
+    parts.push(h('div', { class: 'field' }, h('span', { class: 'field-label' }, t('lab.speed')),
+      segmented(String(cfg.fixedMph || 0), [['0', t('lab.speedAdaptive')], ...[70, 80, 88, 95, 100].map((m) => [String(m), `${m}`])], (v) => { cfg.fixedMph = Number(v) || 0; save(); })));
     parts.push(toggle(!!cfg.deception, (v) => { cfg.deception = v; save(); }, t('lab.deception')));
+    parts.push(toggle(!!cfg.zoneAssist, (v) => { cfg.zoneAssist = v; save(); }, t('lab.zoneAssist')));
     if (strobeActive()) parts.push(toggle(cfg.strobe, (v) => { cfg.strobe = v; save(); }, t('lab.strobe')));
     parts.push(h('p', { class: 'hint' }, t(`lab.modeHow.${cfg.mode}`)));
     optionsHost.replaceChildren(...parts);
